@@ -19,5 +19,11 @@ public class JWTAuthResponse {
             description = "Token Type",
             example = "Bearer"
     )
-    private String tokenType = "Bearer";
+    private String tokenType ;
+
+    @Schema(description = "Username")
+    private String username;
+
+    @Schema(description = "Email")
+    private String email;
 }
