@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -31,6 +32,7 @@ public class JwtTokenProvider {
     public String generateToken(Authentication authentication){
 
         String username = authentication.getName();
+        String email = getEmail(authentication); // Retrieve email ID from CustomUserDetails
 
         Date currentDate = new Date();
 
@@ -40,6 +42,7 @@ public class JwtTokenProvider {
                 .issuer("Asset Management")
                 .subject(username)
                 .claim("username", username)
+                .claim("email",email)
                 .claim("authorities", populateAuthorities(authentication.getAuthorities()))
                 .issuedAt(new Date())
                 .expiration(expireDate)
@@ -89,5 +92,14 @@ public class JwtTokenProvider {
                 authoritiesSet.add(authority.getAuthority());
             }
         return String.join(",", authoritiesSet);
+    }
+
+    private String getEmail(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            return ((CustomUserDetails) principal).getEmailId();
+        } else {
+            return principal.toString();
+        }
     }
 }
