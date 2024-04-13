@@ -24,15 +24,19 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-
         EmployeeModel employee = employeeRepository.findByUsernameOrEmailId(usernameOrEmail, usernameOrEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username or email " + usernameOrEmail));
 
         Set<GrantedAuthority> authorities = employee.getRoles()
-                .stream().map(role -> {
-                    return new SimpleGrantedAuthority(role.getName());
-                }).collect(Collectors.toSet());
+                .stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .collect(Collectors.toSet());
 
-        return new User(employee.getEmailId(),employee.getPassword(),authorities);
+        return new CustomUserDetails(
+                employee.getEmailId(),
+                employee.getUsername(),
+                employee.getPassword(),
+                authorities
+        );
     }
 }
