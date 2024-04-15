@@ -32,48 +32,39 @@ public class DashboardServiceImpl implements DashboardService {
     public Map<AssetStatus, DashboardDto> getAllAssetByStatus(String status) {
         log.info("Fetching assets with status: {}", status);
 
-        List<AssetModel> assets;
-
-        if (status != null && !status.isEmpty()) {
-            if ("active".equalsIgnoreCase(status)) {
-                assets = assetRepository.findAllByAssetStatus(AssetStatus.ACTIVE);
-            } else if ("inactive".equalsIgnoreCase(status)) {
-                assets = assetRepository.findAllByAssetStatus(AssetStatus.INACTIVE);
-            } else {
-                throw new IllegalArgumentException("Invalid status parameter. Allowed values: 'active' or 'inactive'");
-            }
-
-            if (null != assets && !assets.isEmpty()) {
-                log.info("Fetched {} assets", assets.size());
-
-                Double totalCost = getTotalCost(assets);
-
-                Long activeCount = assets.stream()
-                        .filter(asset -> asset.getAssetStatus() == AssetStatus.valueOf(status.toUpperCase()))
-                        .count();
-
-                DashboardDto dashboardDto = new DashboardDto();
-                dashboardDto.setTotalCost(totalCost);
-                dashboardDto.setCount(activeCount);
-
-
-                Map<AssetStatus, DashboardDto> result = new HashMap<>();
-                if ("active".equalsIgnoreCase(status)) {
-                    result.put(AssetStatus.ACTIVE, dashboardDto);
-                } else if ("inactive".equalsIgnoreCase(status)) {
-                    result.put(AssetStatus.INACTIVE, dashboardDto);
-                }
-
-                return result;
-
-            } else {
-                log.warn("No assets found");
-                return Collections.emptyMap();
-            }
+        if (Arrays.stream(AssetStatus.values())
+                .noneMatch(stat -> stat.name().equalsIgnoreCase(status))) {
+            throw new IllegalArgumentException("Invalid status parameter. Allowed values: 'active' or 'inactive'");
         }
-        return Collections.emptyMap();
 
+        // Fetch assets directly from the database using the provided status
+        List<AssetModel> assets = assetRepository.findAllByAssetStatus(AssetStatus.valueOf(status.toUpperCase()));
+
+        if (assets != null && !assets.isEmpty()) {
+            log.info("Fetched {} assets", assets.size());
+
+            // Calculate total cost of all fetched assets
+            Double totalCost = getTotalCost(assets);
+
+            // Count the number of assets with the specified status
+            Long activeCount = (long) assets.size();
+
+            // Create a DashboardDto for the specified status
+            DashboardDto dashboardDto = new DashboardDto();
+            dashboardDto.setTotalCost(totalCost);
+            dashboardDto.setCount(activeCount);
+
+            // Create a map to return the result
+            Map<AssetStatus, DashboardDto> result = new HashMap<>();
+            result.put(AssetStatus.valueOf(status.toUpperCase()), dashboardDto);
+
+            return result;
+        } else {
+            log.warn("No assets found");
+            return Collections.emptyMap();
+        }
     }
+
 
     @Override
     public List<DashboardDto> getAllAsset() {
